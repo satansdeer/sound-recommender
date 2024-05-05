@@ -1,5 +1,7 @@
+import { ObjectId } from 'mongodb';
+
 export interface ISound {
-    _id?: string;
+    _id?: ObjectId;
     title: string;
     bpm: number;
     genres: string[];
@@ -8,6 +10,7 @@ export interface ISound {
 }
 
 export function validateSound(sound: ISound): boolean {
+    console.log("validate Sound", sound)
     if (!sound.title || sound.bpm <= 0 || sound.durationInSeconds <= 0) {
         return false;
     }

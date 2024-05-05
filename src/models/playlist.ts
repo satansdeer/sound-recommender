@@ -1,10 +1,12 @@
+import { ObjectId } from 'mongodb';
+
 export interface IPlaylist {
-    _id?: string;
+    _id?: ObjectId;
     title: string;
     sounds: string[];
 }
 
-function validatePlaylist(playlist: IPlaylist): boolean {
+export function validatePlaylist(playlist: IPlaylist): boolean {
     if (!playlist.title || !playlist.sounds.length) {
         return false;
     }
