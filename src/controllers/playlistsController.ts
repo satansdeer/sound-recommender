@@ -4,18 +4,40 @@ import { IPlaylist, validatePlaylist } from '../models/playlist';
 import { ObjectId } from 'mongodb';
 import handleError from '../utils/handleError';
 
+interface IPlaylistRequest {
+    title: string;
+    sounds: string[];
+}
+
 const createPlaylist = async (req: Request, res: Response) => {
-    const playlist: IPlaylist = req.body;
-    if (!validatePlaylist(playlist)) {
-        return res.status(400).json({ message: 'Invalid playlist data' });
+    const playlistsData: IPlaylistRequest[] = req.body.data;
+
+    if (!Array.isArray(playlistsData) || playlistsData.length === 0) {
+        return res.status(400).json({ message: 'Invalid playlist data, expected an array of playlists' });
+    }
+
+    const invalidPlaylist = playlistsData.find(playlist => !validatePlaylist(playlist));
+    if (invalidPlaylist) {
+        return res.status(400).json({ message: 'One or more playlists are invalid' });
     }
 
     try {
         const db = getDb();
-        const result = await db.collection('playlists').insertOne(playlist);
+        const playlistsToInsert = playlistsData.map(playlist => ({
+            title: playlist.title,
+            sounds: playlist.sounds.map(soundId => new ObjectId(soundId))
+        }));
+
+        const result = await db.collection('playlists').insertMany(playlistsToInsert);
         if (result.acknowledged) {
-            const newPlaylist = await db.collection('playlists').findOne({_id: result.insertedId});
-            res.status(201).json(newPlaylist);
+            const ids = Object.values(result.insertedIds);
+            const newPlaylists = await db.collection('playlists').find({_id: { $in: ids }}).toArray();
+            const responseData = newPlaylists.map(playlist => ({
+                id: playlist._id.toString(),
+                title: playlist.title,
+                sounds: playlist.sounds.map((id: ObjectId) => id.toString()) // Explicitly type the parameter as ObjectId
+            }));
+            res.status(201).json({ data: responseData });
         } else {
             res.status(500).json({ message: 'Insert operation failed' });
         }
@@ -23,7 +45,7 @@ const createPlaylist = async (req: Request, res: Response) => {
         handleError({
             res,
             error,
-            message: 'Failed to create playlist'
+            message: 'Failed to create playlists'
         });
     }
 };
