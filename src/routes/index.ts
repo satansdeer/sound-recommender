@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.post('/admin/sounds', soundsController.createSound);
 router.get('/sounds', soundsController.listSounds);
+router.delete('/sounds/:id', soundsController.deleteSound);
 
 router.post('/playlists', playlistsController.createPlaylist);
 router.get('/sounds/recommended', playlistsController.getRecommendedSounds);

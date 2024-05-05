@@ -1,5 +1,6 @@
+import { ObjectId } from 'mongodb';
 import { Request, Response } from 'express';
-import { getDb } from '../database';
+import { getDb, getClient } from '../database';
 import { ISound, validateSound } from '../models/sound';
 import handleError from '../utils/handleError';
 
@@ -72,7 +73,47 @@ const listSounds = async (req: Request, res: Response) => {
     }
 };
 
+const deleteSound = async (req: Request, res: Response) => {
+    let session;
+    try {
+        const soundId = req.params.id;
+        const db = getDb();
+        const client = getClient();
+
+        session = await client.startSession();
+        session.startTransaction();
+
+        const playlists = await db.collection('playlists')
+                                  .find({ sounds: new ObjectId(soundId) })
+                                  .toArray();
+
+        if (playlists.length > 0) {
+            await session.abortTransaction();
+            session.endSession();
+            return res.status(400).json({ message: "Sound is referenced in playlists and cannot be deleted." });
+        }
+
+        await db.collection('sounds').deleteOne({ _id: new ObjectId(soundId) }, { session });
+
+        await session.commitTransaction();
+        session.endSession();
+        
+        res.send({ message: 'Sound deleted successfully' });
+    } catch (error) {
+        if (session) {
+            await session.abortTransaction();
+            session.endSession();
+        }
+        handleError({
+            res,
+            error,
+            message: 'Failed to delete sound'
+        });
+    }
+};
+
 export default {
+    deleteSound,
     createSound,
     listSounds
 };

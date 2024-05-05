@@ -22,4 +22,8 @@ const getDb = () => {
     return client.db();
 }
 
-export { connectDB, getDb };
+const getClient = () => {
+    return client;
+};
+
+export { connectDB, getDb, getClient };
