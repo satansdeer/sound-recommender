@@ -48,7 +48,21 @@ const listSounds = async (req: Request, res: Response) => {
     try {
         const db = getDb();
         const sounds = await db.collection('sounds').find({}).toArray();
-        res.status(200).json(sounds);
+        
+        const responseData = sounds.map(sound => ({
+            id: sound._id.toString(),
+            title: sound.title,
+            bpm: sound.bpm,
+            genres: sound.genres,
+            durationInSeconds: sound.durationInSeconds,
+            credits: sound.credits
+        }));
+
+        if (responseData.length > 0) {
+            res.status(200).json({ data: responseData });
+        } else {
+            res.status(404).json({ message: 'No sounds found' });
+        }
     } catch (error: unknown) {
         handleError({
             res,
