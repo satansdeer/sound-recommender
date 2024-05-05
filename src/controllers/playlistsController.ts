@@ -58,17 +58,31 @@ const getRecommendedSounds = async (req: Request, res: Response) => {
 
     try {
         const db = getDb();
-        const playlist = await db.collection('playlists').findOne({_id: new ObjectId(playlistId as string)});
+        const playlist = await db.collection('playlists').findOne({ _id: new ObjectId(playlistId as string) });
         if (!playlist) {
             return res.status(404).json({ message: 'Playlist not found' });
         }
 
-        const sounds = await db.collection('sounds').find({_id: { $in: playlist.sounds.map((soundId: string) => new ObjectId(soundId)) }}).toArray();
+        if (playlist.sounds.length === 0) {
+            return res.status(404).json({ message: 'No sounds found in this playlist' });
+        }
+
+        const sounds = await db.collection('sounds').find({
+            _id: { $in: playlist.sounds.map((id: string) => new ObjectId(id)) }
+        }).toArray();
+
         if (sounds.length > 0) {
-            const recommendedSound = sounds[Math.floor(Math.random() * sounds.length)];
-            res.status(200).json(recommendedSound);
+            const responseData = sounds.map(sound => ({
+                id: sound._id.toString(),
+                title: sound.title,
+                bpm: sound.bpm,
+                genres: sound.genres,
+                durationInSeconds: sound.durationInSeconds,
+                credits: sound.credits
+            }));
+            res.status(200).json({ data: responseData });
         } else {
-            res.status(404).json({ message: 'No sounds found in the playlist for recommendation' });
+            res.status(404).json({ message: 'No sounds found for recommendation' });
         }
     } catch (error: unknown) {
         handleError({
