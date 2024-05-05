@@ -45,6 +45,34 @@ const createSound = async (req: Request, res: Response) => {
     }
 };
 
+const getSound = async (req: Request, res: Response) => {
+    try {
+        const soundId = req.params.id;
+        const db = getDb();
+        const sound = await db.collection('sounds').findOne({ _id: new ObjectId(soundId) });
+
+        if (!sound) {
+            res.status(404).json({ message: 'Sound not found' });
+        } else {
+            const responseData = {
+                id: sound._id.toString(),
+                title: sound.title,
+                bpm: sound.bpm,
+                genres: sound.genres,
+                durationInSeconds: sound.durationInSeconds,
+                credits: sound.credits
+            };
+            res.status(200).json({ data: responseData });
+        }
+    } catch (error) {
+        handleError({
+            res,
+            error,
+            message: 'Failed to retrieve sound'
+        });
+    }
+};
+
 const listSounds = async (req: Request, res: Response) => {
     try {
         const db = getDb();
@@ -115,6 +143,7 @@ const deleteSound = async (req: Request, res: Response) => {
 export default {
     deleteSound,
     createSound,
-    listSounds
+    listSounds,
+    getSound
 };
 
