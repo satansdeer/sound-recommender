@@ -1,6 +1,5 @@
-import mongoose, { Document } from 'mongoose';
-
-interface ISound extends Document {
+export interface ISound {
+    _id?: string;
     title: string;
     bpm: number;
     genres: string[];
@@ -8,18 +7,12 @@ interface ISound extends Document {
     credits: Array<{ name: string; role: string }>;
 }
 
-const soundSchema = new mongoose.Schema({
-    title: { type: String, required: true },
-    bpm: { type: Number, required: true },
-    genres: [{ type: String, required: true }],
-    durationInSeconds: { type: Number, required: true },
-    credits: [{
-        name: { type: String, required: true },
-        role: { type: String, required: true }
-    }]
-});
-
-const Sound = mongoose.model<ISound>('Sound', soundSchema);
-
-export default Sound;
-
+export function validateSound(sound: ISound): boolean {
+    if (!sound.title || sound.bpm <= 0 || sound.durationInSeconds <= 0) {
+        return false;
+    }
+    if (!sound.genres.length || sound.credits.some(credit => !credit.name || !credit.role)) {
+        return false;
+    }
+    return true;
+}

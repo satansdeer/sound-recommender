@@ -1,16 +1,12 @@
-import mongoose, { Document } from 'mongoose';
-
-interface IPlaylist extends Document {
+export interface IPlaylist {
+    _id?: string;
     title: string;
-    sounds: mongoose.Schema.Types.ObjectId[];
+    sounds: string[];
 }
 
-const playlistSchema = new mongoose.Schema({
-    title: { type: String, required: true },
-    sounds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Sound' }]
-});
-
-const Playlist = mongoose.model<IPlaylist>('Playlist', playlistSchema);
-
-export default Playlist;
-
+function validatePlaylist(playlist: IPlaylist): boolean {
+    if (!playlist.title || !playlist.sounds.length) {
+        return false;
+    }
+    return true;
+}
